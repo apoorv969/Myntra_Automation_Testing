@@ -1,34 +1,74 @@
-# Myntra_Automation_Testing
-This project automates key user actions on the Myntra website using Selenium WebDriver in Python. It performs product search, selects a product, extracts title and price, handles popups, selects size, and adds the item to the shopping cart—validating each step with test outputs.
-Key Features:
-Automated browser interaction using Selenium WebDriver
+from selenium import webdriver
+from selenium.webdriver.common.by import By
+from selenium.webdriver.common.keys import Keys
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
+import time
 
-Product search and result verification
+driver = webdriver.Chrome()
+wait = WebDriverWait(driver, 15)
 
-Product detail extraction (title and price)
+try:
+    # Test 1: Open Myntra
+    driver.get("https://www.myntra.com")
+    driver.maximize_window()
+    wait.until(EC.presence_of_element_located((By.CLASS_NAME, "desktop-searchBar")))
+    print("✅ Test 1 Passed: Myntra homepage loaded successfully")
 
-Handling of popups and size selection
+    # Test 2: Search for shoes
+    search_box = driver.find_element(By.CLASS_NAME, "desktop-searchBar")
+    search_box.send_keys("shoes")
+    search_box.send_keys(Keys.RETURN)
+    wait.until(EC.presence_of_element_located((By.XPATH, "(//li[contains(@class,'product-base')])[1]")))
+    print("✅ Test 2 Passed: Search results for 'shoes' loaded")
 
-Adding the product to the shopping cart
+    # Test 3: Click on first product
+    driver.find_element(By.XPATH, "(//li[contains(@class,'product-base')])[1]").click()
+    time.sleep(2)
 
-Logging test results with status messages
+    # Test 4: Switch to new tab
+    driver.switch_to.window(driver.window_handles[1])
+    wait.until(EC.presence_of_element_located((By.XPATH, "//h1[@class='pdp-title']")))
+    print("✅ Test 3 & 4 Passed: Product page opened in new tab")
 
-Test Cases Covered:
-Open Myntra homepage and verify page load
+    # Test 5: Extract product title and price
+    title = driver.find_element(By.XPATH, "//h1[@class='pdp-title']").text
+    price = driver.find_element(By.XPATH, "//span[@class='pdp-price']").text
+    print("✅ Test 5 Passed: Product Title and Price Extracted")
+    print(f"🛍️ Product Title: {title}")
+    print(f"💰 Product Price: {price}")
 
-Search for "shoes" and verify results
+    # Select size if available
+    try:
+        size = wait.until(EC.element_to_be_clickable((By.XPATH, "//div[@class='size-buttons-buttonContainer']/div[1]")))
+        size.click()
+        print("✅ Size selected")
+    except:
+        print("⚠️ No size selection required or already selected")
 
-Click on the first search result
+    # Close any popup
+    try:
+        close_btn = driver.find_element(By.CLASS_NAME, "myntraweb-sprite.popup-close")
+        close_btn.click()
+        print("⚠️ Closed interfering popup.")
+    except:
+        pass
 
-Handle new browser tab (product page)
+    # Test 6: Add to Bag
+    print("🟡 Trying to click ADD TO BAG...")
+    try:
+        add_btn = wait.until(EC.presence_of_element_located(
+            (By.XPATH, "//div[contains(translate(text(), 'abcdefghijklmnopqrstuvwxyz', 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'),'ADD TO BAG')]")
+        ))
+        driver.execute_script("arguments[0].scrollIntoView({block: 'center'});", add_btn)
+        time.sleep(1)
+        driver.execute_script("arguments[0].click();", add_btn)
+        print("✅ Test 6 Passed: Product added to bag")
+    except Exception as e:
+        print(f"❌ Test 6 Failed: Could not click ADD TO BAG - {e}")
 
-Extract and print product title and price
 
-Select product size and add it to the bag
 
-🧪 Tech Stack:
-Python 3.x
-
-Selenium WebDriver
-
-ChromeDriver
+finally:
+    time.sleep(3)
+    driver.quit()
